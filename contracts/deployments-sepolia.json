@@ -1,0 +1,16 @@
+{
+  "network": "sepolia",
+  "chainId": 11155111,
+  "contracts": {
+    "YafaBridge": "0x70cC81e15229fe9A016D147438A8D1a737268328",
+    "YafaDex": "0x2E51daEaaF8497fC725900c9f46caDbC0a1d01f5",
+    "Treasury": "0xa0ADc7552E130Da3C82d45AB110C7096ac774f5f",
+    "Sequencer": "0xa0ADc7552E130Da3C82d45AB110C7096ac774f5f"
+  },
+  "deployer": "0xa0ADc7552E130Da3C82d45AB110C7096ac774f5f",
+  "timestamp": "2025-06-17T21:07:34.023Z",
+  "etherscanUrls": {
+    "bridge": "https://sepolia.etherscan.io/address/0x70cC81e15229fe9A016D147438A8D1a737268328",
+    "dex": "https://sepolia.etherscan.io/address/0x2E51daEaaF8497fC725900c9f46caDbC0a1d01f5"
+  }
+}

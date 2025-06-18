@@ -1,0 +1,31 @@
+{
+  "name": "yafa-l2-blockchain",
+  "version": "1.0.0",
+  "description": "Yafa Layer 2 Optimistic Rollup Blockchain",
+  "private": true,
+  "workspaces": [
+    "contracts",
+    "sequencer",
+    "frontend/*",
+    "bridge-ui",
+    "dex-ui",
+    "explorer"
+  ],
+  "scripts": {
+    "install-all": "npm install && npm run install:contracts && npm run install:frontend",
+    "install:contracts": "cd contracts && npm install",
+    "install:frontend": "cd bridge-ui && npm install && cd ../dex-ui && npm install && cd ../explorer && npm install",
+    "dev": "concurrently \"npm run dev:contracts\" \"npm run dev:frontend\"",
+    "build": "npm run build:contracts && npm run build:frontend",
+    "test": "npm run test:contracts"
+  },
+  "devDependencies": {
+    "concurrently": "^7.6.0",
+    "lerna": "^6.4.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
