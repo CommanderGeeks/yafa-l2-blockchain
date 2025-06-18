@@ -1,0 +1,237 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Block {
+  // Block identifiers
+  number        BigInt   @id
+  hash          String   @unique
+  parentHash    String
+  
+  // Block metadata
+  timestamp     DateTime
+  difficulty    String?
+  totalDifficulty String?
+  gasLimit      String
+  gasUsed       String
+  
+  // Miner/validator info
+  miner         String
+  extraData     String?
+  
+  // Block content
+  transactionCount Int     @default(0)
+  size          Int?
+  
+  // Relationships
+  transactions  Transaction[]
+  
+  // Indexing metadata
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@map("blocks")
+}
+
+model Transaction {
+  // Transaction identifiers
+  hash            String   @id
+  blockNumber     BigInt
+  transactionIndex Int
+  
+  // Transaction details
+  from            String
+  to              String?
+  value           String
+  gasLimit        String
+  gasUsed         String?
+  gasPrice        String?
+  maxFeePerGas    String?
+  maxPriorityFeePerGas String?
+  
+  // Transaction data
+  input           String?
+  nonce           Int
+  type            Int?     @default(0)
+  
+  // Status
+  status          Int?     // 1 = success, 0 = failed
+  
+  // Relationships
+  block           Block    @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
+  logs            Log[]
+  
+  // Indexing metadata
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("transactions")
+  @@index([from])
+  @@index([to])
+  @@index([blockNumber])
+}
+
+model Log {
+  id              String   @id @default(cuid())
+  
+  // Log identifiers
+  transactionHash String
+  logIndex        Int
+  blockNumber     BigInt
+  
+  // Log details
+  address         String
+  topics          String[] // Array of topic hashes
+  data            String
+  
+  // Relationships
+  transaction     Transaction @relation(fields: [transactionHash], references: [hash], onDelete: Cascade)
+  
+  // Indexing metadata
+  createdAt       DateTime @default(now())
+  
+  @@map("logs")
+  @@index([address])
+  @@index([blockNumber])
+  @@unique([transactionHash, logIndex])
+}
+
+model Address {
+  address         String   @id
+  
+  // Account details
+  balance         String   @default("0")
+  nonce           Int      @default(0)
+  isContract      Boolean  @default(false)
+  contractCode    String?
+  
+  // Token information (if this is a token contract)
+  tokenName       String?
+  tokenSymbol     String?
+  tokenDecimals   Int?
+  tokenTotalSupply String?
+  tokenType       TokenType?
+  
+  // Statistics
+  transactionCount Int     @default(0)
+  firstSeen       DateTime?
+  lastSeen        DateTime?
+  
+  // Token balances for this address
+  tokenBalances   TokenBalance[]
+  
+  // Indexing metadata
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("addresses")
+}
+
+model TokenBalance {
+  id              String   @id @default(cuid())
+  
+  // Identifiers
+  address         String
+  tokenAddress    String
+  
+  // Balance details
+  balance         String
+  
+  // Relationships
+  account         Address  @relation(fields: [address], references: [address], onDelete: Cascade)
+  
+  // Indexing metadata
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("token_balances")
+  @@unique([address, tokenAddress])
+  @@index([tokenAddress])
+}
+
+model TokenTransfer {
+  id              String   @id @default(cuid())
+  
+  // Transfer identifiers
+  transactionHash String
+  logIndex        Int
+  blockNumber     BigInt
+  
+  // Transfer details
+  tokenAddress    String
+  from            String
+  to              String
+  value           String
+  tokenId         String? // For NFTs
+  
+  // Indexing metadata
+  createdAt       DateTime @default(now())
+  
+  @@map("token_transfers")
+  @@index([tokenAddress])
+  @@index([from])
+  @@index([to])
+  @@index([blockNumber])
+  @@unique([transactionHash, logIndex])
+}
+
+model ChainStats {
+  id              String   @id @default("singleton")
+  
+  // Current state
+  latestBlock     BigInt
+  latestBlockHash String
+  totalTransactions BigInt @default(0)
+  totalAddresses  BigInt   @default(0)
+  
+  // Network stats
+  averageBlockTime Float?
+  hashrate        String?
+  difficulty      String?
+  
+  // Gas statistics
+  averageGasPrice String?
+  averageGasUsed  String?
+  
+  // Indexing metadata
+  updatedAt       DateTime @updatedAt
+  
+  @@map("chain_stats")
+}
+
+model SyncStatus {
+  id              String   @id @default("singleton")
+  
+  // Sync progress
+  currentBlock    BigInt
+  targetBlock     BigInt?
+  isSyncing       Boolean  @default(false)
+  
+  // Performance metrics
+  blocksPerSecond Float?
+  lastSyncTime    DateTime?
+  
+  // Error tracking
+  lastError       String?
+  errorCount      Int      @default(0)
+  
+  // Indexing metadata
+  updatedAt       DateTime @updatedAt
+  
+  @@map("sync_status")
+}
+
+enum TokenType {
+  ERC20
+  ERC721
+  ERC1155
+  UNKNOWN
+}
