@@ -11,8 +11,10 @@ datasource db {
 }
 
 model Block {
+  id            String   @id @default(cuid())
+  
   // Block identifiers
-  number        BigInt   @id
+  number        BigInt   @unique
   hash          String   @unique
   parentHash    String
   
@@ -22,14 +24,15 @@ model Block {
   totalDifficulty String?
   gasLimit      String
   gasUsed       String
+  baseFeePerGas String?
   
   // Miner/validator info
   miner         String
   extraData     String?
+  nonce         String?
   
   // Block content
-  transactionCount Int     @default(0)
-  size          Int?
+  size          String?
   
   // Relationships
   transactions  Transaction[]
@@ -39,31 +42,40 @@ model Block {
   updatedAt     DateTime @updatedAt
   
   @@map("blocks")
+  @@index([number])
+  @@index([timestamp])
+  @@index([miner])
 }
 
 model Transaction {
+  id              String   @id @default(cuid())
+  
   // Transaction identifiers
-  hash            String   @id
+  hash            String   @unique
   blockNumber     BigInt
+  blockHash       String
   transactionIndex Int
   
   // Transaction details
   from            String
   to              String?
   value           String
-  gasLimit        String
+  gas             String
   gasUsed         String?
-  gasPrice        String?
+  gasPrice        String
   maxFeePerGas    String?
   maxPriorityFeePerGas String?
   
   // Transaction data
-  input           String?
-  nonce           Int
+  input           String   @default("0x")
+  nonce           BigInt
   type            Int?     @default(0)
   
   // Status
-  status          Int?     // 1 = success, 0 = failed
+  status          String   @default("pending") // success, failed, pending
+  
+  // Timestamps
+  timestamp       DateTime
   
   // Relationships
   block           Block    @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
@@ -77,6 +89,8 @@ model Transaction {
   @@index([from])
   @@index([to])
   @@index([blockNumber])
+  @@index([timestamp])
+  @@index([status])
 }
 
 model Log {
@@ -91,6 +105,7 @@ model Log {
   address         String
   topics          String[] // Array of topic hashes
   data            String
+  removed         Boolean  @default(false)
   
   // Relationships
   transaction     Transaction @relation(fields: [transactionHash], references: [hash], onDelete: Cascade)
@@ -101,6 +116,7 @@ model Log {
   @@map("logs")
   @@index([address])
   @@index([blockNumber])
+  @@index([transactionHash])
   @@unique([transactionHash, logIndex])
 }
 
@@ -109,52 +125,46 @@ model Address {
   
   // Account details
   balance         String   @default("0")
-  nonce           Int      @default(0)
+  nonce           BigInt   @default(0)
   isContract      Boolean  @default(false)
-  contractCode    String?
-  
-  // Token information (if this is a token contract)
-  tokenName       String?
-  tokenSymbol     String?
-  tokenDecimals   Int?
-  tokenTotalSupply String?
-  tokenType       TokenType?
+  code            String?
+  contractName    String?
   
   // Statistics
-  transactionCount Int     @default(0)
-  firstSeen       DateTime?
-  lastSeen        DateTime?
-  
-  // Token balances for this address
-  tokenBalances   TokenBalance[]
+  firstSeen       DateTime @default(now())
+  lastSeen        DateTime @default(now())
   
   // Indexing metadata
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   
   @@map("addresses")
+  @@index([isContract])
+  @@index([firstSeen])
+  @@index([lastSeen])
 }
 
-model TokenBalance {
+model Token {
   id              String   @id @default(cuid())
+  address         String   @unique
   
-  // Identifiers
-  address         String
-  tokenAddress    String
-  
-  // Balance details
-  balance         String
+  // Token details
+  name            String
+  symbol          String
+  decimals        Int
+  totalSupply     String
+  type            TokenType
   
   // Relationships
-  account         Address  @relation(fields: [address], references: [address], onDelete: Cascade)
+  transfers       TokenTransfer[]
   
   // Indexing metadata
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   
-  @@map("token_balances")
-  @@unique([address, tokenAddress])
-  @@index([tokenAddress])
+  @@map("tokens")
+  @@index([symbol])
+  @@index([type])
 }
 
 model TokenTransfer {
@@ -162,15 +172,17 @@ model TokenTransfer {
   
   // Transfer identifiers
   transactionHash String
-  logIndex        Int
   blockNumber     BigInt
+  logIndex        Int
+  tokenAddress    String
   
   // Transfer details
-  tokenAddress    String
   from            String
   to              String
   value           String
-  tokenId         String? // For NFTs
+  
+  // Relationships
+  token           Token    @relation(fields: [tokenAddress], references: [address], onDelete: Cascade)
   
   // Indexing metadata
   createdAt       DateTime @default(now())
@@ -183,55 +195,41 @@ model TokenTransfer {
   @@unique([transactionHash, logIndex])
 }
 
-model ChainStats {
-  id              String   @id @default("singleton")
-  
-  // Current state
-  latestBlock     BigInt
-  latestBlockHash String
-  totalTransactions BigInt @default(0)
-  totalAddresses  BigInt   @default(0)
-  
-  // Network stats
-  averageBlockTime Float?
-  hashrate        String?
-  difficulty      String?
-  
-  // Gas statistics
-  averageGasPrice String?
-  averageGasUsed  String?
-  
-  // Indexing metadata
-  updatedAt       DateTime @updatedAt
-  
-  @@map("chain_stats")
-}
-
 model SyncStatus {
-  id              String   @id @default("singleton")
-  
-  // Sync progress
+  id              String   @id
   currentBlock    BigInt
-  targetBlock     BigInt?
   isSyncing       Boolean  @default(false)
-  
-  // Performance metrics
-  blocksPerSecond Float?
   lastSyncTime    DateTime?
   
-  // Error tracking
-  lastError       String?
-  errorCount      Int      @default(0)
-  
   // Indexing metadata
+  createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   
   @@map("sync_status")
+}
+
+model ChainStats {
+  id              String   @id
+  
+  // Chain statistics
+  totalBlocks     BigInt   @default(0)
+  totalTransactions BigInt @default(0)
+  totalAddresses  BigInt   @default(0)
+  averageBlockTime Float   @default(12.0)
+  
+  // Network stats
+  networkHashrate String?
+  totalSupply     String?
+  circulatingSupply String?
+  
+  // Updated timestamp
+  updatedAt       DateTime @updatedAt
+  
+  @@map("chain_stats")
 }
 
 enum TokenType {
   ERC20
   ERC721
   ERC1155
-  UNKNOWN
 }
