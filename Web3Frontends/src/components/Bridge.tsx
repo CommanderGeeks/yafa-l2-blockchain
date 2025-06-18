@@ -11,6 +11,7 @@ import {
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { MultiWalletButton } from './MultiWalletButton';
+import Navigation from './Navigation';
 
 // Chain configurations
 const SUPPORTED_CHAINS = [
@@ -189,6 +190,11 @@ const Bridge = () => {
         </div>
         
         <MultiWalletButton />
+      </div>
+
+      {/* Navigation */}
+      <div className="relative z-10 max-w-2xl mx-auto">
+        <Navigation />
       </div>
 
       {/* Main Bridge Card */}

@@ -7,16 +7,18 @@
     "contracts",
     "sequencer",
     "frontend/*",
-    "bridge-ui",
+    "Web3Frontends",
     "dex-ui",
     "explorer"
   ],
   "scripts": {
     "install-all": "npm install && npm run install:contracts && npm run install:frontend",
     "install:contracts": "cd contracts && npm install",
-    "install:frontend": "cd bridge-ui && npm install && cd ../dex-ui && npm install && cd ../explorer && npm install",
+    "install:frontend": "cd Web3Frontends && npm install && cd ../dex-ui && npm install && cd ../explorer && npm install",
     "dev": "concurrently \"npm run dev:contracts\" \"npm run dev:frontend\"",
+    "dev:frontend": "cd Web3Frontends && npm run dev",
     "build": "npm run build:contracts && npm run build:frontend",
+    "build:frontend": "cd Web3Frontends && npm run build",
     "test": "npm run test:contracts"
   },
   "devDependencies": {
