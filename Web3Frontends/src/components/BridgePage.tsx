@@ -1,7 +1,7 @@
 import React from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import EnhancedNavigation from '../src/components/EnhancedNavigation';
-import Bridge from '../src/components/Bridge';
+import EnhancedNavigation from '@/components/EnhancedNavigation';
+import Bridge from '@/components/Bridge';
 
 const BridgePage = () => {
   return (

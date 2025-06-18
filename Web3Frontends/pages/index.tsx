@@ -1,4 +1,4 @@
-﻿import BridgePage from '../src/components/BridgePage';
+﻿import BridgePage from '@/components/BridgePage';
 
 export default function Home() {
   return <BridgePage />;

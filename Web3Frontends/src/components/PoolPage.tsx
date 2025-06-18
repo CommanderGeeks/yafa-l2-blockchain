@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import EnhancedNavigation from '../src/components/EnhancedNavigation';
-import CreatePosition from '../src/components/CreatePosition';
-import ViewPositions from '../src/components/ViewPositions';
+import EnhancedNavigation from '@/components/EnhancedNavigation';
+import CreatePosition from '@/components/CreatePosition';
+import ViewPositions from '@/components/ViewPositions';
 
 const PoolPage = () => {
   const router = useRouter();

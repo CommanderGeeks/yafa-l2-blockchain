@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAccount, usePublicClient, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { formatUnits, parseUnits } from 'viem';
-import { usePairInfo } from '../hooks/usePairInfo';
+import { usePairInfo } from '@/hooks/usePairInfo';
 
 // Contract addresses
 const ROUTER_ADDRESS = process.env.NEXT_PUBLIC_ROUTER_ADDRESS || '0x2E51daEaaF8497fC725900c9f46caDbC0a1d01f5';

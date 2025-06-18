@@ -1,7 +1,7 @@
 import React from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import EnhancedNavigation from '../src/components/EnhancedNavigation';
-import YafaSwap from '../src/components/YafaSwap';
+import EnhancedNavigation from '@/components/EnhancedNavigation';
+import YafaSwap from '@/components/YafaSwap';
 
 const DexPage = () => {
   return (
