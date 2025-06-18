@@ -1,120 +1,108 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { db } from '../../../lib/database';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100);
-    const status = searchParams.get('status'); // 'success', 'failed', or null for all
-    const address = searchParams.get('address'); // filter by from/to address
+    const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 100); // Max 100 per page
+    const status = searchParams.get('status'); // success, failed, pending
+    const blockNumber = searchParams.get('block');
     const offset = (page - 1) * limit;
 
     // Build where clause
     const where: any = {};
-    
-    if (status === 'success') {
-      where.status = 1;
-    } else if (status === 'failed') {
-      where.status = 0;
+    if (status) {
+      where.status = status;
     }
-
-    if (address) {
-      where.OR = [
-        { from: address.toLowerCase() },
-        { to: address.toLowerCase() }
-      ];
+    if (blockNumber) {
+      where.blockNumber = BigInt(blockNumber);
     }
 
     // Get total count for pagination
-    const totalTransactions = await prisma.transaction.count({ where });
+    const total = await db.transaction.count({ where });
 
-    // Get transactions with block info
-    const transactions = await prisma.transaction.findMany({
+    // Get transactions
+    const transactions = await db.transaction.findMany({
       where,
-      select: {
-        hash: true,
-        blockNumber: true,
-        transactionIndex: true,
-        from: true,
-        to: true,
-        value: true,
-        gasLimit: true,
-        gasUsed: true,
-        gasPrice: true,
-        maxFeePerGas: true,
-        status: true,
-        type: true,
+      skip: offset,
+      take: limit,
+      orderBy: { timestamp: 'desc' },
+      include: {
         block: {
           select: {
-            timestamp: true,
-            number: true
+            timestamp: true
           }
-        }
-      },
-      orderBy: [
-        { blockNumber: 'desc' },
-        { transactionIndex: 'desc' }
-      ],
-      skip: offset,
-      take: limit
-    });
-
-    // Format response data
-    const formattedTransactions = transactions.map(tx => {
-      const gasPrice = tx.gasPrice || tx.maxFeePerGas || '0';
-      const txFee = (BigInt(tx.gasUsed || '0') * BigInt(gasPrice)).toString();
-      
-      return {
-        hash: tx.hash,
-        blockNumber: tx.blockNumber.toString(),
-        index: tx.transactionIndex,
-        from: tx.from,
-        to: tx.to,
-        value: tx.value,
-        gasLimit: tx.gasLimit,
-        gasUsed: tx.gasUsed,
-        gasPrice: gasPrice,
-        transactionFee: txFee,
-        status: tx.status === 1 ? 'success' : 'failed',
-        type: tx.type || 0,
-        timestamp: tx.block.timestamp.toISOString(),
-        age: Math.floor((Date.now() - tx.block.timestamp.getTime()) / 1000),
-        method: tx.to ? 'Transfer' : 'Contract Creation' // Simplified method detection
-      };
-    });
-
-    const totalPages = Math.ceil(totalTransactions / limit);
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        transactions: formattedTransactions,
-        pagination: {
-          page,
-          limit,
-          totalTransactions,
-          totalPages,
-          hasNext: page < totalPages,
-          hasPrev: page > 1
-        },
-        filters: {
-          status,
-          address
         }
       }
     });
 
-  } catch (error) {
-    console.error('Error fetching transactions:', error);
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to fetch transactions' 
+    // Transform the data
+    const transformedTransactions = transactions.map(tx => {
+      const age = Math.floor((Date.now() - tx.timestamp.getTime()) / 1000);
+      
+      // Extract method from input data
+      let method = 'Transfer';
+      if (tx.input && tx.input !== '0x' && tx.input.length >= 10) {
+        const methodSignature = tx.input.slice(0, 10);
+        // Map common method signatures to readable names
+        const methodMap: { [key: string]: string } = {
+          '0xa9059cbb': 'Transfer',
+          '0x23b872dd': 'Transfer From',
+          '0x095ea7b3': 'Approve',
+          '0x40c10f19': 'Mint',
+          '0x42966c68': 'Burn',
+          '0x7ff36ab5': 'Swap Exact ETH For Tokens',
+          '0x18cbafe5': 'Swap Exact Tokens For ETH',
+          '0x38ed1739': 'Swap Exact Tokens For Tokens',
+          '0xf305d719': 'Add Liquidity ETH',
+          '0xe8e33700': 'Add Liquidity'
+        };
+        method = methodMap[methodSignature] || methodSignature;
+      }
+
+      return {
+        hash: tx.hash,
+        blockNumber: tx.blockNumber.toString(),
+        blockHash: tx.blockHash,
+        transactionIndex: tx.transactionIndex,
+        from: tx.from,
+        to: tx.to || '',
+        value: tx.value,
+        gas: tx.gas,
+        gasUsed: tx.gasUsed || tx.gas,
+        gasPrice: tx.gasPrice,
+        maxFeePerGas: tx.maxFeePerGas,
+        maxPriorityFeePerGas: tx.maxPriorityFeePerGas,
+        nonce: tx.nonce.toString(),
+        input: tx.input,
+        status: tx.status,
+        timestamp: tx.timestamp.toISOString(),
+        age,
+        method
+      };
+    });
+
+    const totalPages = Math.ceil(total / limit);
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        transactions: transformedTransactions
       },
-      { status: 500 }
-    );
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: totalPages
+      }
+    });
+
+  } catch (error) {
+    console.error('Transactions API error:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to fetch transactions'
+    }, { status: 500 });
   }
 }

@@ -1,57 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { db } from '../../../../lib/database';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { addr: string } }
 ) {
   try {
-    const address = params.addr.toLowerCase();
+    const { addr } = params;
     const { searchParams } = new URL(request.url);
-    const includeTransactions = searchParams.get('transactions') === 'true';
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100);
-    const offset = (page - 1) * limit;
+    const include = searchParams.get('include'); // transactions, tokens, etc.
 
-    // Get address information
-    const addressInfo = await prisma.address.findUnique({
-      where: { address },
-      include: {
-        tokenBalances: {
-          take: 50, // Limit token balances to prevent huge responses
-          orderBy: {
-            updatedAt: 'desc'
-          }
-        }
-      }
+    // Validate address format
+    if (!addr || !addr.match(/^0x[a-fA-F0-9]{40}$/)) {
+      return NextResponse.json({
+        success: false,
+        error: 'Invalid address format'
+      }, { status: 400 });
+    }
+
+    const address = addr.toLowerCase();
+
+    // Get or create address record
+    let addressRecord = await db.address.findUnique({
+      where: { address }
     });
 
-    // Get transaction counts
-    const [sentCount, receivedCount] = await Promise.all([
-      prisma.transaction.count({
-        where: { from: address }
-      }),
-      prisma.transaction.count({
-        where: { to: address }
-      })
-    ]);
+    if (!addressRecord) {
+      // Create address record if it doesn't exist
+      addressRecord = await db.address.create({
+        data: {
+          address,
+          balance: '0',
+          nonce: BigInt(0),
+          isContract: false,
+          firstSeen: new Date(),
+          lastSeen: new Date()
+        }
+      });
+    }
 
-    const totalTransactions = sentCount + receivedCount;
+    // Get transaction counts
+    const sentTxCount = await db.transaction.count({
+      where: { from: address }
+    });
+
+    const receivedTxCount = await db.transaction.count({
+      where: { to: address }
+    });
+
+    const totalTxCount = sentTxCount + receivedTxCount;
 
     // Get recent transactions if requested
-    let transactions = [];
-    let transactionsPagination = null;
-
-    if (includeTransactions) {
-      const txs = await prisma.transaction.findMany({
+    let recentTransactions = null;
+    if (include?.includes('transactions')) {
+      const transactions = await db.transaction.findMany({
         where: {
           OR: [
             { from: address },
             { to: address }
           ]
         },
+        orderBy: { timestamp: 'desc' },
+        take: 10,
         select: {
           hash: true,
           blockNumber: true,
@@ -61,143 +71,187 @@ export async function GET(
           gasUsed: true,
           gasPrice: true,
           status: true,
-          block: {
-            select: {
-              timestamp: true
-            }
-          }
-        },
-        orderBy: [
-          { blockNumber: 'desc' },
-          { transactionIndex: 'desc' }
-        ],
-        skip: offset,
-        take: limit
-      });
-
-      transactions = txs.map(tx => ({
-        hash: tx.hash,
-        blockNumber: tx.blockNumber.toString(),
-        from: tx.from,
-        to: tx.to,
-        value: tx.value,
-        gasUsed: tx.gasUsed,
-        gasPrice: tx.gasPrice,
-        status: tx.status === 1 ? 'success' : 'failed',
-        timestamp: tx.block.timestamp.toISOString(),
-        age: Math.floor((Date.now() - tx.block.timestamp.getTime()) / 1000),
-        direction: tx.from === address ? 'out' : 'in'
-      }));
-
-      const totalPages = Math.ceil(totalTransactions / limit);
-      transactionsPagination = {
-        page,
-        limit,
-        totalTransactions,
-        totalPages,
-        hasNext: page < totalPages,
-        hasPrev: page > 1
-      };
-    }
-
-    // Get token transfer counts
-    const [tokenSentCount, tokenReceivedCount] = await Promise.all([
-      prisma.tokenTransfer.count({
-        where: { from: address }
-      }),
-      prisma.tokenTransfer.count({
-        where: { to: address }
-      })
-    ]);
-
-    // Check if this is a contract
-    const isContract = addressInfo?.isContract || false;
-    
-    // For contracts, get additional information
-    let contractInfo = null;
-    if (isContract) {
-      // Get contract creation transaction
-      const creationTx = await prisma.transaction.findFirst({
-        where: {
-          to: null, // Contract creation
-          from: address
-        },
-        include: {
-          block: {
-            select: {
-              timestamp: true,
-              number: true
-            }
-          }
-        },
-        orderBy: {
-          blockNumber: 'asc'
+          timestamp: true
         }
       });
 
-      contractInfo = {
-        isToken: !!addressInfo?.tokenName,
-        tokenInfo: addressInfo?.tokenName ? {
-          name: addressInfo.tokenName,
-          symbol: addressInfo.tokenSymbol,
-          decimals: addressInfo.tokenDecimals,
-          totalSupply: addressInfo.tokenTotalSupply,
-          type: addressInfo.tokenType
-        } : null,
-        createdAt: creationTx?.block.timestamp.toISOString(),
-        createdInBlock: creationTx?.block.number.toString(),
-        creationTxHash: creationTx?.hash
-      };
+      recentTransactions = transactions.map(tx => ({
+        ...tx,
+        blockNumber: tx.blockNumber.toString(),
+        age: Math.floor((Date.now() - tx.timestamp.getTime()) / 1000),
+        direction: tx.from.toLowerCase() === address ? 'sent' : 'received'
+      }));
     }
 
-    const response = {
-      address,
-      balance: addressInfo?.balance || '0',
-      nonce: addressInfo?.nonce || 0,
+    // Get token balances if requested
+    let tokenBalances = null;
+    if (include?.includes('tokens')) {
+      // Get token transfers involving this address
+      const tokenTransfers = await db.tokenTransfer.findMany({
+        where: {
+          OR: [
+            { from: address },
+            { to: address }
+          ]
+        },
+        select: {
+          tokenAddress: true,
+          from: true,
+          to: true,
+          value: true
+        }
+      });
+
+      // Calculate balances for each token
+      const balanceMap = new Map<string, bigint>();
+      
+      for (const transfer of tokenTransfers) {
+        const tokenAddr = transfer.tokenAddress;
+        const value = BigInt(transfer.value);
+        
+        if (!balanceMap.has(tokenAddr)) {
+          balanceMap.set(tokenAddr, BigInt(0));
+        }
+        
+        if (transfer.to.toLowerCase() === address) {
+          balanceMap.set(tokenAddr, balanceMap.get(tokenAddr)! + value);
+        } else if (transfer.from.toLowerCase() === address) {
+          balanceMap.set(tokenAddr, balanceMap.get(tokenAddr)! - value);
+        }
+      }
+
+      // Get token metadata
+      tokenBalances = [];
+      for (const [tokenAddr, balance] of balanceMap.entries()) {
+        if (balance > 0) {
+          const token = await db.token.findUnique({
+            where: { address: tokenAddr }
+          });
+          
+          tokenBalances.push({
+            tokenAddress: tokenAddr,
+            balance: balance.toString(),
+            token: token ? {
+              name: token.name,
+              symbol: token.symbol,
+              decimals: token.decimals,
+              type: token.type
+            } : null
+          });
+        }
+      }
+    }
+
+    // Check if address is a contract
+    const isContract = addressRecord.code && addressRecord.code !== '0x';
+
+    const result = {
+      address: addressRecord.address,
+      balance: addressRecord.balance,
+      nonce: addressRecord.nonce.toString(),
       isContract,
-      contractInfo,
-      
-      // Transaction statistics
-      transactionCount: totalTransactions,
-      sentTransactions: sentCount,
-      receivedTransactions: receivedCount,
-      
-      // Token transfer statistics
-      tokenTransferCount: tokenSentCount + tokenReceivedCount,
-      tokenTransfersSent: tokenSentCount,
-      tokenTransfersReceived: tokenReceivedCount,
-      
-      // Token balances
-      tokenBalances: addressInfo?.tokenBalances.map(tb => ({
-        tokenAddress: tb.tokenAddress,
-        balance: tb.balance,
-        lastUpdated: tb.updatedAt.toISOString()
-      })) || [],
-      
-      // Activity timestamps
-      firstSeen: addressInfo?.firstSeen?.toISOString(),
-      lastSeen: addressInfo?.lastSeen?.toISOString(),
-      
-      // Recent transactions (if requested)
-      ...(includeTransactions && {
-        transactions,
-        transactionsPagination
-      })
+      contractName: addressRecord.contractName,
+      code: isContract ? addressRecord.code : undefined,
+      transactionCount: totalTxCount,
+      sentTransactions: sentTxCount,
+      receivedTransactions: receivedTxCount,
+      firstSeen: addressRecord.firstSeen.toISOString(),
+      lastSeen: addressRecord.lastSeen.toISOString(),
+      recentTransactions,
+      tokenBalances
     };
 
     return NextResponse.json({
       success: true,
-      data: response
+      data: result
     });
 
   } catch (error) {
-    console.error('Error fetching address:', error);
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to fetch address details' 
+    console.error('Address API error:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to fetch address data'
+    }, { status: 500 });
+  }
+}
+
+// Additional endpoint for address transactions with pagination
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { addr: string } }
+) {
+  try {
+    const { addr } = params;
+    const body = await request.json();
+    const { page = 1, limit = 20, type = 'all' } = body; // type: 'all', 'sent', 'received'
+
+    const address = addr.toLowerCase();
+    const offset = (page - 1) * limit;
+
+    // Build where clause based on type
+    let where: any = {
+      OR: [
+        { from: address },
+        { to: address }
+      ]
+    };
+
+    if (type === 'sent') {
+      where = { from: address };
+    } else if (type === 'received') {
+      where = { to: address };
+    }
+
+    const total = await db.transaction.count({ where });
+
+    const transactions = await db.transaction.findMany({
+      where,
+      skip: offset,
+      take: limit,
+      orderBy: { timestamp: 'desc' },
+      select: {
+        hash: true,
+        blockNumber: true,
+        from: true,
+        to: true,
+        value: true,
+        gas: true,
+        gasUsed: true,
+        gasPrice: true,
+        status: true,
+        timestamp: true,
+        input: true
+      }
+    });
+
+    const transformedTransactions = transactions.map(tx => ({
+      ...tx,
+      blockNumber: tx.blockNumber.toString(),
+      age: Math.floor((Date.now() - tx.timestamp.getTime()) / 1000),
+      direction: tx.from.toLowerCase() === address ? 'sent' : 'received',
+      method: tx.input && tx.input !== '0x' && tx.input.length >= 10 
+        ? tx.input.slice(0, 10) 
+        : 'Transfer'
+    }));
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        transactions: transformedTransactions
       },
-      { status: 500 }
-    );
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+
+  } catch (error) {
+    console.error('Address transactions API error:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to fetch address transactions'
+    }, { status: 500 });
   }
 }
