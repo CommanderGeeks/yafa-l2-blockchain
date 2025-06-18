@@ -1,5 +1,5 @@
-import YafaSwap from '../src/components/YafaSwap';
+import DexPage from '../src/components/DexPage';
 
-export default function DexPage() {
-  return <YafaSwap />;
+export default function Dex() {
+  return <DexPage />;
 }

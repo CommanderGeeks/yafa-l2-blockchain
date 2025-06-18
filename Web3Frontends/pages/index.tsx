@@ -1,5 +1,5 @@
-﻿import Bridge from '../src/components/Bridge';
+﻿import BridgePage from '../src/components/BridgePage';
 
 export default function Home() {
-  return <Bridge />;
+  return <BridgePage />;
 }

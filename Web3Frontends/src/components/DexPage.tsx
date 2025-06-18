@@ -1,9 +1,9 @@
 import React from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import EnhancedNavigation from '../src/components/EnhancedNavigation';
-import Bridge from '../src/components/Bridge';
+import YafaSwap from '../src/components/YafaSwap';
 
-const BridgePage = () => {
+const DexPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-black to-gray-950 text-green-400 relative overflow-hidden">
       {/* Animated Background Effects */}
@@ -25,20 +25,20 @@ const BridgePage = () => {
           <div className="flex items-center space-x-4">
             <div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
-                Cross-Chain Bridge
+                Token Swap
               </h1>
-              <p className="text-green-500/80 text-lg font-medium mt-2">Transfer assets between Ethereum and Yafa L2</p>
+              <p className="text-green-500/80 text-lg font-medium mt-2">Trade tokens instantly with low fees</p>
             </div>
           </div>
           
           <ConnectButton />
         </div>
 
-        {/* Bridge Interface */}
-        <Bridge />
+        {/* Swap Interface */}
+        <YafaSwap />
       </div>
     </div>
   );
 };
 
-export default BridgePage;
+export default DexPage;
