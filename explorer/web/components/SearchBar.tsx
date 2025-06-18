@@ -1,79 +1,105 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 import { Search, X } from 'lucide-react';
+
+interface SearchSuggestion {
+  type: 'block' | 'transaction' | 'address' | 'token';
+  value: string;
+  display: string;
+}
 
 const SearchBar: React.FC = () => {
   const [query, setQuery] = useState('');
+  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [suggestions, setSuggestions] = useState<Array<{
-    type: 'block' | 'transaction' | 'address';
-    value: string;
-    display: string;
-  }>>([]);
   const [isLoading, setIsLoading] = useState(false);
-  
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  // Auto-detect search type and navigate
-  const handleSearch = async (searchQuery: string = query) => {
-    if (!searchQuery.trim()) return;
+  // Handle search submission
+  const handleSearch = async () => {
+    if (!query.trim()) return;
 
-    const trimmedQuery = searchQuery.trim();
+    setIsLoading(true);
     
-    // Detect search type
-    if (/^\d+$/.test(trimmedQuery)) {
-      // Block number
-      router.push(`/block/${trimmedQuery}`);
-    } else if (/^0x[a-fA-F0-9]{64}$/.test(trimmedQuery)) {
-      // Transaction hash or block hash
-      router.push(`/tx/${trimmedQuery}`);
-    } else if (/^0x[a-fA-F0-9]{40}$/.test(trimmedQuery)) {
-      // Address
-      router.push(`/address/${trimmedQuery}`);
-    } else {
-      // Try to search in API
-      try {
-        setIsLoading(true);
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/search?q=${encodeURIComponent(trimmedQuery)}`);
-        const data = await response.json();
-        
-        if (data.success && data.data.length > 0) {
-          const result = data.data[0];
-          switch (result.type) {
-            case 'block':
-              router.push(`/block/${result.value}`);
-              break;
-            case 'transaction':
-              router.push(`/tx/${result.value}`);
-              break;
-            case 'address':
-              router.push(`/address/${result.value}`);
-              break;
+    try {
+      // Detect what type of search this is
+      const searchType = detectSearchType(query.trim());
+      
+      switch (searchType) {
+        case 'block':
+          router.push(`/block/${query.trim()}`);
+          break;
+        case 'transaction':
+          router.push(`/tx/${query.trim()}`);
+          break;
+        case 'address':
+          router.push(`/address/${query.trim()}`);
+          break;
+        default:
+          // Try API search as fallback
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/search?q=${encodeURIComponent(query)}`);
+          const data = await response.json();
+          
+          if (data.success) {
+            switch (data.data.type) {
+              case 'block':
+                router.push(`/block/${data.data.data.number}`);
+                break;
+              case 'transaction':
+                router.push(`/tx/${data.data.data.hash}`);
+                break;
+              case 'address':
+                router.push(`/address/${data.data.data.address}`);
+                break;
+              case 'token':
+                router.push(`/token/${data.data.data.address}`);
+                break;
+              default:
+                alert('No results found. Please check your search term.');
+            }
+          } else {
+            alert('No results found. Please check your search term.');
           }
-        } else {
-          // Show error or no results found
-          alert('No results found. Please check your search term.');
-        }
-      } catch (error) {
-        console.error('Search error:', error);
-        alert('Search failed. Please try again.');
-      } finally {
-        setIsLoading(false);
       }
+    } catch (error) {
+      console.error('Search error:', error);
+      alert('Search failed. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
     
     setQuery('');
     setIsOpen(false);
   };
 
+  // Detect search type based on input pattern
+  const detectSearchType = (value: string): string => {
+    // Block number (only digits)
+    if (/^\d+$/.test(value)) {
+      return 'block';
+    }
+    
+    // Transaction hash (0x + 64 hex chars)
+    if (/^0x[a-fA-F0-9]{64}$/.test(value)) {
+      return 'transaction';
+    }
+    
+    // Address (0x + 40 hex chars)
+    if (/^0x[a-fA-F0-9]{40}$/.test(value)) {
+      return 'address';
+    }
+    
+    return 'unknown';
+  };
+
   // Generate search suggestions
   const generateSuggestions = (value: string) => {
-    const suggestions = [];
+    const suggestions: SearchSuggestion[] = [];
     
     if (/^\d+$/.test(value)) {
       suggestions.push({
-        type: 'block' as const,
+        type: 'block',
         value: value,
         display: `Block #${value}`
       });
@@ -82,14 +108,14 @@ const SearchBar: React.FC = () => {
     if (/^0x[a-fA-F0-9]+$/.test(value)) {
       if (value.length <= 42) {
         suggestions.push({
-          type: 'address' as const,
+          type: 'address',
           value: value,
           display: `Address: ${value}`
         });
       }
       if (value.length <= 66) {
         suggestions.push({
-          type: 'transaction' as const,
+          type: 'transaction',
           value: value,
           display: `Transaction: ${value.slice(0, 10)}...${value.slice(-8)}`
         });
@@ -122,6 +148,12 @@ const SearchBar: React.FC = () => {
     }
   };
 
+  // Handle suggestion click
+  const handleSuggestionClick = (suggestion: SearchSuggestion) => {
+    setQuery(suggestion.value);
+    handleSearch();
+  };
+
   // Close suggestions when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -135,14 +167,13 @@ const SearchBar: React.FC = () => {
   }, []);
 
   return (
-    <div className="relative w-full max-w-2xl">
+    <div className="relative w-full max-w-2xl" ref={inputRef}>
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <Search className="h-5 w-5 text-green-500/70" />
         </div>
         
         <input
-          ref={inputRef}
           type="text"
           value={query}
           onChange={(e) => handleInputChange(e.target.value)}
@@ -173,36 +204,25 @@ const SearchBar: React.FC = () => {
         )}
       </div>
 
-      {/* Search Suggestions */}
-      {isOpen && (query.length > 0 || suggestions.length > 0) && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-gray-900/95 backdrop-blur-xl border border-green-500/30 rounded-xl shadow-2xl shadow-green-500/20 overflow-hidden z-50">
-          
-          {/* Auto-detected suggestions */}
+      {/* Search Suggestions Dropdown */}
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 mt-2 bg-gray-900/95 backdrop-blur-xl border border-green-500/30 rounded-xl shadow-2xl z-50 max-h-96 overflow-y-auto">
+          {/* Suggestions */}
           {suggestions.length > 0 && (
             <div className="p-2">
               <p className="text-green-500/70 text-xs uppercase tracking-wide mb-2 px-3">Suggestions</p>
               {suggestions.map((suggestion, index) => (
                 <button
                   key={index}
-                  onClick={() => handleSearch(suggestion.value)}
-                  className="w-full text-left px-3 py-2 hover:bg-green-500/10 rounded-lg transition-all group flex items-center space-x-3"
+                  onClick={() => handleSuggestionClick(suggestion)}
+                  className="w-full text-left px-3 py-3 rounded-lg hover:bg-green-500/10 transition-colors group flex items-center space-x-3"
                 >
-                  <div className="flex-shrink-0">
-                    {suggestion.type === 'block' && (
-                      <div className="w-8 h-8 bg-blue-500/20 text-blue-400 rounded-lg flex items-center justify-center text-sm">
-                        📦
-                      </div>
-                    )}
-                    {suggestion.type === 'transaction' && (
-                      <div className="w-8 h-8 bg-green-500/20 text-green-400 rounded-lg flex items-center justify-center text-sm">
-                        💸
-                      </div>
-                    )}
-                    {suggestion.type === 'address' && (
-                      <div className="w-8 h-8 bg-purple-500/20 text-purple-400 rounded-lg flex items-center justify-center text-sm">
-                        👤
-                      </div>
-                    )}
+                  <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center border border-green-500/30 group-hover:border-green-400/50 transition-colors">
+                    <span className="text-lg">
+                      {suggestion.type === 'block' ? '📦' : 
+                       suggestion.type === 'transaction' ? '💸' : 
+                       suggestion.type === 'address' ? '👤' : '🪙'}
+                    </span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-green-400 font-medium truncate group-hover:text-green-300">
