@@ -1,3 +1,4 @@
+// Fixed PoolPage.tsx with proper navigation to positions page
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
@@ -17,10 +18,15 @@ const PoolPage = () => {
     }
   }, [router.query]);
 
-  // Update URL when tab changes
+  // Update URL when tab changes or navigate to dedicated positions page
   const handleTabChange = (newTab: 'create' | 'view') => {
-    setActiveTab(newTab);
-    router.push(`/pool?tab=${newTab}`, undefined, { shallow: true });
+    if (newTab === 'view') {
+      // Navigate to the dedicated positions page instead of just changing tabs
+      router.push('/pools/positions');
+    } else {
+      setActiveTab(newTab);
+      router.push(`/pools?tab=${newTab}`, undefined, { shallow: true });
+    }
   };
 
   // Handle Connect Wallet in header
@@ -56,7 +62,7 @@ const PoolPage = () => {
                 Liquidity Pools
               </h1>
               <p className="text-green-500/80 text-lg font-medium mt-2">
-                {activeTab === 'create' ? 'Add liquidity to earn trading fees' : 'Manage your liquidity positions'}
+                Add liquidity to earn trading fees
               </p>
             </div>
           </div>
@@ -80,11 +86,7 @@ const PoolPage = () => {
             </button>
             <button
               onClick={() => handleTabChange('view')}
-              className={`flex-1 py-3 px-6 rounded-xl font-bold transition-all duration-300 flex items-center justify-center space-x-2 ${
-                activeTab === 'view'
-                  ? 'bg-green-500/20 text-green-400 border border-green-500/50 shadow-lg shadow-green-500/20'
-                  : 'text-green-500/70 hover:text-green-400 hover:bg-gray-800/50'
-              }`}
+              className="flex-1 py-3 px-6 rounded-xl font-bold transition-all duration-300 flex items-center justify-center space-x-2 text-green-500/70 hover:text-green-400 hover:bg-gray-800/50"
             >
               <span>📊</span>
               <span>Your Positions</span>
@@ -92,9 +94,9 @@ const PoolPage = () => {
           </div>
         </div>
 
-        {/* Tab Content */}
+        {/* Tab Content - Only show CreatePosition since ViewPositions has its own page */}
         <div className="relative z-10">
-          {activeTab === 'create' ? <CreatePosition /> : <ViewPositions />}
+          <CreatePosition />
         </div>
 
         {/* Quick Access Cards */}
@@ -159,31 +161,40 @@ const PoolPage = () => {
           </div>
         </div>
 
+        {/* Enhanced Call-to-Action Section */}
+        <div className="relative z-10 max-w-4xl mx-auto mt-16 text-center">
+          <div className="bg-gradient-to-r from-gray-900/60 via-gray-900/40 to-gray-900/60 backdrop-blur-xl border border-green-500/30 rounded-3xl p-8 md:p-12">
+            <div className="mb-6">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent mb-4">
+                Start Earning with Liquidity Pools
+              </h2>
+              <p className="text-green-500/80 text-lg max-w-2xl mx-auto">
+                Provide liquidity to trading pairs and earn a share of trading fees. Your tokens work for you 24/7.
+              </p>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <button 
+                onClick={() => handleTabChange('create')}
+                className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-black font-bold rounded-xl hover:from-green-400 hover:to-emerald-400 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-green-500/25"
+              >
+                Add Liquidity Now
+              </button>
+              <button 
+                onClick={() => router.push('/pools/positions')}
+                className="px-8 py-4 bg-gray-800/50 border border-green-500/30 text-green-400 font-bold rounded-xl hover:bg-gray-700/50 hover:border-green-400/50 transition-all duration-300"
+              >
+                View My Positions
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Footer */}
         <div className="relative z-10 mt-16 text-center">
           <div className="inline-flex items-center space-x-2 mb-4">
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
             <p className="text-green-500/70 text-sm font-medium">Powered by YAFA L2 Technology</p>
-          </div>
-          <div className="flex justify-center items-center space-x-6 text-xs text-green-600/60">
-            <div className="flex items-center space-x-1 hover:text-green-500 transition-colors cursor-pointer">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              <span className="font-medium">Fast Pools</span>
-            </div>
-            <div className="flex items-center space-x-1 hover:text-green-500 transition-colors cursor-pointer">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="font-medium">Low Fees</span>
-            </div>
-            <div className="flex items-center space-x-1 hover:text-green-500 transition-colors cursor-pointer">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-              <span className="font-medium">Audited</span>
-            </div>
           </div>
         </div>
       </div>

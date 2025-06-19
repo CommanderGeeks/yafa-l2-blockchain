@@ -1,344 +1,429 @@
+// TokensPage.tsx - Updated with consistent explorer layout
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { 
-  Search, Filter, Download, TrendingUp, TrendingDown, 
-  ExternalLink, Users, Globe, ArrowUp, ArrowDown, Minus
-} from 'lucide-react';
+import ExplorerLayout from '@/components/ExplorerLayout';
+import { Filter, Download, TrendingUp, Users, Globe, Activity } from 'lucide-react';
 
 interface Token {
-  address: string;
+  id: number;
   name: string;
   symbol: string;
-  decimals: number;
-  totalSupply: string;
-  holders: number;
-  transfers: number;
-  price: string;
-  marketCap: string;
+  type: string;
+  price: number;
   change24h: number;
-  volume24h: string;
-  type: 'ERC20' | 'ERC721' | 'ERC1155';
+  marketCap: number;
+  volume24h: number;
+  holders: number;
+  contract: string;
   verified: boolean;
 }
 
-export default function TokensPage() {
+const TokensPage = () => {
   const [tokens, setTokens] = useState<Token[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState<'all' | 'ERC20' | 'ERC721' | 'ERC1155'>('all');
-  const [sortBy, setSortBy] = useState<'marketCap' | 'holders' | 'transfers'>('marketCap');
+  const [sortBy, setSortBy] = useState<keyof Token>('marketCap');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [filterType, setFilterType] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Mock token data
+  const mockTokens: Token[] = [
+    {
+      id: 1,
+      name: 'Yafa Token',
+      symbol: 'YAFA',
+      type: 'ERC1155',
+      price: 306.2761,
+      change24h: 7.74,
+      marketCap: 333000000,
+      volume24h: 26000000,
+      holders: 47344,
+      contract: '0x163d...36b8',
+      verified: true
+    },
+    {
+      id: 2,
+      name: 'USD Coin',
+      symbol: 'USDC',
+      type: 'ERC721',
+      price: 392.6454,
+      change24h: 8.97,
+      marketCap: 119500000,
+      volume24h: 14200000,
+      holders: 8374,
+      contract: '0x5e3c...6729',
+      verified: true
+    },
+    {
+      id: 3,
+      name: 'Wrapped Ether',
+      symbol: 'WETH',
+      type: 'ERC1155',
+      price: 316.2704,
+      change24h: 4.29,
+      marketCap: 158700000,
+      volume24h: 31300000,
+      holders: 22590,
+      contract: '0xc656...3468',
+      verified: true
+    },
+    {
+      id: 4,
+      name: 'Dai Stablecoin',
+      symbol: 'DAI',
+      type: 'ERC721',
+      price: 289.8609,
+      change24h: -2.80,
+      marketCap: 378300000,
+      volume24h: 56900000,
+      holders: 14061,
+      contract: '0x4555...d918',
+      verified: true
+    },
+    {
+      id: 5,
+      name: 'Chainlink Token',
+      symbol: 'LINK',
+      type: 'ERC1155',
+      price: 650.9758,
+      change24h: 6.17,
+      marketCap: 400100000,
+      volume24h: 57300000,
+      holders: 14725,
+      contract: '0x537e...532a',
+      verified: true
+    },
+    {
+      id: 6,
+      name: 'Uniswap',
+      symbol: 'UNI',
+      type: 'ERC1155',
+      price: 861.2423,
+      change24h: 2.99,
+      marketCap: 448600000,
+      volume24h: 81500000,
+      holders: 39180,
+      contract: '0x8c58...c95f',
+      verified: true
+    },
+    {
+      id: 7,
+      name: 'Aave',
+      symbol: 'AAVE',
+      type: 'ERC1155',
+      price: 1234.567,
+      change24h: -1.45,
+      marketCap: 567800000,
+      volume24h: 23400000,
+      holders: 18234,
+      contract: '0x9a8e...4d21',
+      verified: true
+    }
+  ];
 
   useEffect(() => {
+    // Simulate API call
     const fetchTokens = async () => {
       setLoading(true);
-      
-      try {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Generate mock tokens
-        const tokenNames = [
-          'Yafa Token', 'USD Coin', 'Wrapped Ether', 'Dai Stablecoin', 'Chainlink Token',
-          'Uniswap', 'Aave Token', 'Compound', 'Maker', 'Polygon', 'The Graph',
-          'SushiSwap', '1inch Token', 'Balancer', 'Yearn Finance', 'Curve DAO Token'
-        ];
-        
-        const tokenSymbols = [
-          'YAFA', 'USDC', 'WETH', 'DAI', 'LINK', 'UNI', 'AAVE', 'COMP', 'MKR', 
-          'MATIC', 'GRT', 'SUSHI', '1INCH', 'BAL', 'YFI', 'CRV'
-        ];
-
-        const mockTokens: Token[] = Array.from({ length: 50 }, (_, i) => ({
-          address: `0x${Math.random().toString(16).substr(2, 40)}`,
-          name: tokenNames[i % tokenNames.length],
-          symbol: tokenSymbols[i % tokenSymbols.length],
-          decimals: 18,
-          totalSupply: (Math.random() * 1000000000).toFixed(0),
-          holders: Math.floor(Math.random() * 50000) + 1000,
-          transfers: Math.floor(Math.random() * 1000000) + 10000,
-          price: (Math.random() * 1000).toFixed(4),
-          marketCap: `${(Math.random() * 500).toFixed(1)}M`,
-          change24h: (Math.random() - 0.5) * 20, // -10% to +10%
-          volume24h: `${(Math.random() * 100).toFixed(1)}M`,
-          type: ['ERC20', 'ERC721', 'ERC1155'][Math.floor(Math.random() * 3)] as any,
-          verified: Math.random() > 0.3 // 70% verified
-        }));
-        
-        setTokens(mockTokens);
-        
-      } catch (error) {
-        console.error('Failed to fetch tokens:', error);
-      } finally {
-        setLoading(false);
-      }
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setTokens(mockTokens);
+      setLoading(false);
     };
 
     fetchTokens();
   }, []);
 
-  const formatNumber = (num: number) => {
-    return new Intl.NumberFormat().format(num);
+  const handleRefresh = () => {
+    setTokens([]);
+    setLoading(true);
+    setTimeout(() => {
+      setTokens(mockTokens);
+      setLoading(false);
+    }, 1000);
   };
 
-  const formatLargeNumber = (num: number) => {
-    if (num >= 1000000000) return `${(num / 1000000000).toFixed(1)}B`;
-    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-    return num.toString();
+  const formatNumber = (num: number): string => {
+    if (num >= 1e9) return `$${(num / 1e9).toFixed(1)}B`;
+    if (num >= 1e6) return `$${(num / 1e6).toFixed(1)}M`;
+    if (num >= 1e3) return `$${(num / 1e3).toFixed(1)}K`;
+    return `$${num.toFixed(2)}`;
   };
 
-  const truncateHash = (hash: string) => {
-    return `${hash.slice(0, 6)}...${hash.slice(-4)}`;
-  };
-
-  const formatPercentage = (change: number) => {
-    const isPositive = change > 0;
-    const isNegative = change < 0;
-    
+  const formatChange = (change: number): JSX.Element => {
+    const isPositive = change >= 0;
     return (
-      <div className={`flex items-center space-x-1 ${
-        isPositive ? 'text-green-400' : 
-        isNegative ? 'text-red-400' : 'text-gray-400'
-      }`}>
-        {isPositive ? <ArrowUp className="w-3 h-3" /> : 
-         isNegative ? <ArrowDown className="w-3 h-3" /> : 
-         <Minus className="w-3 h-3" />}
-        <span className="text-xs font-medium">{Math.abs(change).toFixed(2)}%</span>
-      </div>
+      <span className={`flex items-center ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
+        {isPositive ? '↗' : '↘'} {Math.abs(change).toFixed(2)}%
+      </span>
     );
   };
 
-  const handleSort = (field: 'marketCap' | 'holders' | 'transfers') => {
+  const handleSort = (field: keyof Token) => {
     if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+      setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
     } else {
       setSortBy(field);
       setSortOrder('desc');
     }
   };
 
-  const filteredTokens = tokens.filter(token => {
-    if (typeFilter !== 'all' && token.type !== typeFilter) return false;
-    if (searchQuery && !token.name.toLowerCase().includes(searchQuery.toLowerCase()) && 
-        !token.symbol.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    return true;
-  });
+  const filteredTokens = tokens
+    .filter(token => {
+      if (filterType !== 'all' && token.type !== filterType) return false;
+      if (searchQuery && !token.name.toLowerCase().includes(searchQuery.toLowerCase()) && 
+          !token.symbol.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      const aVal = a[sortBy];
+      const bVal = b[sortBy];
+      const multiplier = sortOrder === 'desc' ? -1 : 1;
+      
+      if (typeof aVal === 'string' && typeof bVal === 'string') {
+        return aVal.localeCompare(bVal) * multiplier;
+      }
+      return ((aVal as number) - (bVal as number)) * multiplier;
+    });
 
-  return (
-    <div className="min-h-screen">
-      {/* Page Header */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold title-gradient mb-2">
-                Tokens
-              </h1>
-              <p className="text-green-500/70">Explore tokens and contracts on the YAFA L2 network</p>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <button className="form-button-secondary">
-                <Filter className="w-4 h-4 mr-2" />
-                Filters
-              </button>
-              
-              <button className="form-button-secondary">
-                <Download className="w-4 h-4 mr-2" />
-                Export
-              </button>
-            </div>
-          </div>
-
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-            {[
-              { label: 'Total Tokens', value: '2,456', icon: Globe },
-              { label: 'Total Holders', value: '124K+', icon: Users },
-              { label: 'Total Market Cap', value: '$1.2B', icon: TrendingUp },
-              { label: '24h Volume', value: '$45.6M', icon: TrendingUp }
-            ].map((stat, index) => (
-              <div key={index} className="explorer-card">
-                <div className="flex items-center space-x-3 mb-2">
-                  <div className="w-10 h-10 bg-green-400/20 rounded-lg flex items-center justify-center">
-                    <stat.icon className="w-5 h-5 text-green-400" />
-                  </div>
-                  <div>
-                    <p className="text-green-100 font-semibold text-lg">{stat.value}</p>
-                    <p className="text-green-500/70 text-sm">{stat.label}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Search and Filters */}
-        <div className="explorer-card mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-4 sm:space-y-0">
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-green-500/50 w-4 h-4" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search tokens..."
-                  className="form-input pl-10 w-64"
-                />
-              </div>
-              
-              <div>
-                <select 
-                  value={typeFilter}
-                  onChange={(e) => setTypeFilter(e.target.value as any)}
-                  className="form-input w-32"
-                >
-                  <option value="all">All Types</option>
-                  <option value="ERC20">ERC20</option>
-                  <option value="ERC721">ERC721</option>
-                  <option value="ERC1155">ERC1155</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="text-sm text-green-500/70">
-              Showing {filteredTokens.length} tokens
-            </div>
-          </div>
-        </div>
-
-        {/* Tokens Table */}
-        <div className="explorer-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gray-800/50 border-b border-green-500/20">
-                  <th className="px-6 py-4 text-left text-xs font-medium text-green-400 uppercase tracking-wider">
-                    #
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-green-400 uppercase tracking-wider">
-                    Token
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-green-400 uppercase tracking-wider">
-                    Price
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-green-400 uppercase tracking-wider">
-                    24h Change
-                  </th>
-                  <th 
-                    className="px-6 py-4 text-left text-xs font-medium text-green-400 uppercase tracking-wider cursor-pointer hover:text-green-300 transition-colors"
-                    onClick={() => handleSort('marketCap')}
-                  >
-                    <div className="flex items-center space-x-1">
-                      <span>Market Cap</span>
-                      {sortBy === 'marketCap' && (
-                        <span className="text-green-300">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                      )}
-                    </div>
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-green-400 uppercase tracking-wider">
-                    24h Volume
-                  </th>
-                  <th 
-                    className="px-6 py-4 text-left text-xs font-medium text-green-400 uppercase tracking-wider cursor-pointer hover:text-green-300 transition-colors"
-                    onClick={() => handleSort('holders')}
-                  >
-                    <div className="flex items-center space-x-1">
-                      <span>Holders</span>
-                      {sortBy === 'holders' && (
-                        <span className="text-green-300">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                      )}
-                    </div>
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-green-400 uppercase tracking-wider">
-                    Contract
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-700/50">
-                {loading ? (
-                  Array.from({ length: 10 }).map((_, i) => (
-                    <tr key={i}>
-                      {Array.from({ length: 8 }).map((_, j) => (
-                        <td key={j} className="px-6 py-4">
-                          <div className="skeleton h-4 rounded"></div>
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                ) : (
-                  filteredTokens.map((token, index) => (
-                    <tr key={token.address} className="hover:bg-gray-800/30 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-green-100 font-semibold">#{index + 1}</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-green-400/20 rounded-full flex items-center justify-center">
-                            <span className="text-green-400 font-bold text-xs">{token.symbol.charAt(0)}</span>
-                          </div>
-                          <div>
-                            <div className="flex items-center space-x-2">
-                              <p className="text-green-100 font-semibold">{token.symbol}</p>
-                              {token.verified && (
-                                <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                                  <span className="text-white text-xs">✓</span>
-                                </div>
-                              )}
-                              <span className={`badge-${
-                                token.type === 'ERC20' ? 'success' : 
-                                token.type === 'ERC721' ? 'info' : 'warning'
-                              }`}>
-                                {token.type}
-                              </span>
-                            </div>
-                            <p className="text-green-500/70 text-sm">{token.name}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-green-100 font-medium">${token.price}</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {formatPercentage(token.change24h)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-green-100 font-medium">${token.marketCap}</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-green-100">${token.volume24h}</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-green-100">{formatNumber(token.holders)}</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center space-x-2">
-                          <Link 
-                            href={`/token/${token.address}`}
-                            className="text-green-400 hover:text-green-300 font-mono text-sm transition-colors"
-                          >
-                            {truncateHash(token.address)}
-                          </Link>
-                          <button 
-                            onClick={() => navigator.clipboard.writeText(token.address)}
-                            className="text-green-400 hover:text-green-300 transition-colors"
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
+  const rightContent = (
+    <div className="flex items-center space-x-2">
+      <button className="p-2 bg-gray-800/50 hover:bg-gray-700/50 border border-green-500/30 rounded-lg transition-all duration-200">
+        <Filter className="w-5 h-5" aria-hidden="true" />
+      </button>
+      <button className="p-2 bg-gray-800/50 hover:bg-gray-700/50 border border-green-500/30 rounded-lg transition-all duration-200">
+        <Download className="w-5 h-5" aria-hidden="true" />
+      </button>
     </div>
   );
-}
+
+  return (
+    <ExplorerLayout
+      title="Tokens"
+      subtitle="Explore tokens and contracts on the YAFA L2 network"
+      showRefresh={true}
+      onRefresh={handleRefresh}
+      isLoading={loading}
+      rightContent={rightContent}
+    >
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="bg-gray-900/40 backdrop-blur-xl border border-green-500/20 rounded-2xl p-6">
+          <div className="flex items-center space-x-3 mb-3">
+            <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+              <Globe className="w-5 h-5 text-green-400" aria-hidden="true" />
+            </div>
+            <div>
+              <p className="text-green-500/70 text-sm">Total Tokens</p>
+              <p className="text-2xl font-bold text-green-400">2,456</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-gray-900/40 backdrop-blur-xl border border-green-500/20 rounded-2xl p-6">
+          <div className="flex items-center space-x-3 mb-3">
+            <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+              <Users className="w-5 h-5 text-blue-400" aria-hidden="true" />
+            </div>
+            <div>
+              <p className="text-green-500/70 text-sm">Total Holders</p>
+              <p className="text-2xl font-bold text-green-400">124K+</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-gray-900/40 backdrop-blur-xl border border-green-500/20 rounded-2xl p-6">
+          <div className="flex items-center space-x-3 mb-3">
+            <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-purple-400" aria-hidden="true" />
+            </div>
+            <div>
+              <p className="text-green-500/70 text-sm">Total Market Cap</p>
+              <p className="text-2xl font-bold text-green-400">$1.2B</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-gray-900/40 backdrop-blur-xl border border-green-500/20 rounded-2xl p-6">
+          <div className="flex items-center space-x-3 mb-3">
+            <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
+              <Activity className="w-5 h-5 text-orange-400" aria-hidden="true" />
+            </div>
+            <div>
+              <p className="text-green-500/70 text-sm">24h Volume</p>
+              <p className="text-2xl font-bold text-green-400">$45.6M</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-4 sm:space-y-0 mb-6">
+        <div className="flex items-center space-x-4">
+          <input
+            type="text"
+            placeholder="Search tokens..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="px-3 py-2 bg-gray-800/50 border border-green-500/30 rounded-lg text-green-100 placeholder-green-500/60 focus:outline-none focus:ring-2 focus:ring-green-400/50"
+          />
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            className="px-3 py-2 bg-gray-800/50 border border-green-500/30 rounded-lg text-green-100 focus:outline-none focus:ring-2 focus:ring-green-400/50"
+          >
+            <option value="all">All Types</option>
+            <option value="ERC1155">ERC1155</option>
+            <option value="ERC721">ERC721</option>
+            <option value="ERC20">ERC20</option>
+          </select>
+        </div>
+        <div className="text-green-500/70 text-sm">
+          Showing {filteredTokens.length} tokens
+        </div>
+      </div>
+
+      {/* Tokens Table */}
+      <div className="bg-gray-900/40 backdrop-blur-xl border border-green-500/20 rounded-2xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-800/50 border-b border-green-500/20">
+                <th className="px-6 py-4 text-left text-xs font-medium text-green-400 uppercase tracking-wider">#</th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-green-400 uppercase tracking-wider">
+                  TOKEN
+                </th>
+                <th 
+                  className="px-6 py-4 text-left text-xs font-medium text-green-400 uppercase tracking-wider cursor-pointer hover:text-green-300"
+                  onClick={() => handleSort('price')}
+                >
+                  PRICE
+                </th>
+                <th 
+                  className="px-6 py-4 text-left text-xs font-medium text-green-400 uppercase tracking-wider cursor-pointer hover:text-green-300"
+                  onClick={() => handleSort('change24h')}
+                >
+                  24H CHANGE
+                </th>
+                <th 
+                  className="px-6 py-4 text-left text-xs font-medium text-green-400 uppercase tracking-wider cursor-pointer hover:text-green-300"
+                  onClick={() => handleSort('marketCap')}
+                >
+                  MARKET CAP ↓
+                </th>
+                <th 
+                  className="px-6 py-4 text-left text-xs font-medium text-green-400 uppercase tracking-wider cursor-pointer hover:text-green-300"
+                  onClick={() => handleSort('volume24h')}
+                >
+                  24H VOLUME
+                </th>
+                <th 
+                  className="px-6 py-4 text-left text-xs font-medium text-green-400 uppercase tracking-wider cursor-pointer hover:text-green-300"
+                  onClick={() => handleSort('holders')}
+                >
+                  HOLDERS
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-green-400 uppercase tracking-wider">
+                  CONTRACT
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-700/50">
+              {loading ? (
+                // Loading skeleton
+                Array(7).fill(0).map((_, i) => (
+                  <tr key={i} className="hover:bg-gray-800/30 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="h-4 bg-green-500/20 rounded animate-pulse"></div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-green-500/20 rounded-full animate-pulse"></div>
+                        <div className="space-y-2">
+                          <div className="h-4 w-20 bg-green-500/20 rounded animate-pulse"></div>
+                          <div className="h-3 w-16 bg-green-500/20 rounded animate-pulse"></div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="h-4 w-16 bg-green-500/20 rounded animate-pulse"></div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="h-4 w-12 bg-green-500/20 rounded animate-pulse"></div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="h-4 w-16 bg-green-500/20 rounded animate-pulse"></div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="h-4 w-16 bg-green-500/20 rounded animate-pulse"></div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="h-4 w-12 bg-green-500/20 rounded animate-pulse"></div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="h-4 w-20 bg-green-500/20 rounded animate-pulse"></div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                filteredTokens.map((token, index) => (
+                  <tr key={token.id} className="hover:bg-gray-800/30 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-green-500/70">
+                      #{index + 1}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
+                          <span className="text-sm font-bold text-green-400">
+                            {token.symbol.charAt(0)}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-green-100">
+                            {token.name}
+                          </div>
+                          <div className="text-xs text-green-500/70">
+                            {token.symbol} • {token.type}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-green-100">
+                      ${token.price.toFixed(4)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {formatChange(token.change24h)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-green-100">
+                      {formatNumber(token.marketCap)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-green-100">
+                      {formatNumber(token.volume24h)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-green-100">
+                      {token.holders.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-green-400 font-mono">
+                          {token.contract}
+                        </span>
+                        <button className="text-green-500/70 hover:text-green-400 transition-colors">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </ExplorerLayout>
+  );
+};
+
+export default TokensPage;
