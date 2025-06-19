@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, ComposedChart } from 'recharts';
 import { Activity, TrendingUp, TrendingDown, Zap } from 'lucide-react';
-import { formatTimeAgo, formatNumber } from '../../lib/utils';
+import { formatTimeAgo, formatNumber } from '../../../../../explorer/web/lib/utils';
 
 interface ThroughputData {
   timestamp: string;

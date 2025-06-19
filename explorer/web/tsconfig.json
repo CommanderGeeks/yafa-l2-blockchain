@@ -52,7 +52,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts"
-  ],
+, "../../Web3Frontends/src/components/explorer/BlockCard.tsx", "../../Web3Frontends/src/components/explorer/LiveUpdates.tsx", "../../Web3Frontends/src/components/explorer/SearchBar.tsx", "../../Web3Frontends/src/components/explorer/SkeletonLoader.tsx", "../../Web3Frontends/src/components/explorer/StatsCard.tsx", "../../Web3Frontends/src/components/explorer/TransactionCard.tsx", "../../Web3Frontends/pages/explorer/stats.tsx"  ],
   "exclude": [
     "node_modules",
     ".next",

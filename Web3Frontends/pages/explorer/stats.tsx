@@ -17,10 +17,10 @@ import {
   Users, 
   Zap 
 } from 'lucide-react';
-import StatsCard from '../../components/StatsCard';
-import SkeletonLoader from '../../components/SkeletonLoader';
-import TxThroughputChart from '../../components/Charts/TxThroughputChart';
-import BlockTimeChart from '../../components/Charts/BlockTimeChart';
+import StatsCard from '../../src/components/explorer/StatsCard';
+import SkeletonLoader from '../../src/components/explorer/SkeletonLoader';
+import TxThroughputChart from '../../src/components/explorer/Charts/TxThroughputChart';
+import BlockTimeChart from '../../src/components/explorer/Charts/BlockTimeChart';
 
 interface ChainStats {
   totalBlocks: number;
