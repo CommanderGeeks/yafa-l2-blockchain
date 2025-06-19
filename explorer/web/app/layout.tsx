@@ -47,7 +47,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.json" />
       </head>
-      <body className={`${inter.className} bg-gradient-to-br from-gray-950 via-black to-gray-950 text-green-400 antialiased`}>
+      <body className={`${inter.className} antialiased`}>
         <Layout>
           {children}
         </Layout>

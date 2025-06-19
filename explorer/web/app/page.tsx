@@ -3,108 +3,35 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
-  Activity, Clock, Zap, TrendingUp, Users, Layers, 
-  ArrowRight, Search, Globe, Database, Shield, Cpu
+  Activity, Clock, Zap, Users, Layers, 
+  Search, Globe, Database, Shield
 } from 'lucide-react';
 
-interface NetworkStats {
-  latestBlock: number;
-  totalTransactions: number;
-  totalAddresses: number;
-  avgBlockTime: number;
-  currentTPS: number;
-  gasPrice: number;
-  networkStatus: 'healthy' | 'degraded' | 'down';
-}
-
-interface RecentBlock {
-  number: number;
-  hash: string;
-  timestamp: number;
-  transactions: number;
-  gasUsed: string;
-  miner: string;
-}
-
-interface RecentTransaction {
-  hash: string;
-  from: string;
-  to: string;
-  value: string;
-  timestamp: number;
-  status: 'success' | 'failed';
-}
-
 export default function HomePage() {
-  const [stats, setStats] = useState<NetworkStats | null>(null);
-  const [recentBlocks, setRecentBlocks] = useState<RecentBlock[]>([]);
-  const [recentTransactions, setRecentTransactions] = useState<RecentTransaction[]>([]);
+  const [stats, setStats] = useState({
+    latestBlock: 1247589,
+    totalTransactions: 5847392,
+    totalAddresses: 98742,
+    avgBlockTime: 12.3,
+    currentTPS: 45.7,
+    gasPrice: 25,
+    networkStatus: 'healthy' as const
+  });
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Mock data - replace with real API calls
-        setStats({
-          latestBlock: 1247589,
-          totalTransactions: 5847392,
-          totalAddresses: 98742,
-          avgBlockTime: 12.3,
-          currentTPS: 45.7,
-          gasPrice: 25,
-          networkStatus: 'healthy'
-        });
+    // Simulate loading
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1000);
 
-        setRecentBlocks(Array.from({ length: 6 }, (_, i) => ({
-          number: 1247589 - i,
-          hash: `0x${Math.random().toString(16).substr(2, 64)}`,
-          timestamp: Date.now() - (i * 12000),
-          transactions: Math.floor(Math.random() * 50) + 10,
-          gasUsed: `${(Math.random() * 8000000 + 2000000).toFixed(0)}`,
-          miner: `0x${Math.random().toString(16).substr(2, 40)}`
-        })));
-
-        setRecentTransactions(Array.from({ length: 8 }, (_, i) => ({
-          hash: `0x${Math.random().toString(16).substr(2, 64)}`,
-          from: `0x${Math.random().toString(16).substr(2, 40)}`,
-          to: `0x${Math.random().toString(16).substr(2, 40)}`,
-          value: (Math.random() * 10).toFixed(4),
-          timestamp: Date.now() - (i * 8000),
-          status: Math.random() > 0.1 ? 'success' : 'failed'
-        })));
-
-      } catch (err) {
-        setError('Failed to fetch explorer data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-    const interval = setInterval(fetchData, 30000);
-    return () => clearInterval(interval);
+    return () => clearTimeout(timer);
   }, []);
-
-  const formatTime = (timestamp: number) => {
-    const diff = Date.now() - timestamp;
-    const seconds = Math.floor(diff / 1000);
-    if (seconds < 60) return `${seconds}s ago`;
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}m ago`;
-    return `${Math.floor(minutes / 60)}h ago`;
-  };
 
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat().format(num);
-  };
-
-  const truncateHash = (hash: string) => {
-    return `${hash.slice(0, 6)}...${hash.slice(-4)}`;
   };
 
   return (
@@ -113,7 +40,7 @@ export default function HomePage() {
       <section className="relative py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6">
-            <span className="bg-gradient-to-r from-green-400 via-emerald-400 to-green-500 bg-clip-text text-transparent">
+            <span className="title-gradient">
               YAFA L2 Explorer
             </span>
           </h1>
@@ -129,9 +56,9 @@ export default function HomePage() {
               <input
                 type="text"
                 placeholder="Search blocks, transactions, addresses..."
-                className="w-full bg-gray-900/50 backdrop-blur-sm border-2 border-green-500/30 rounded-2xl pl-14 pr-6 py-4 text-lg text-green-100 placeholder-green-500/50 focus:outline-none focus:ring-2 focus:ring-green-400/50 focus:border-green-400 transition-all"
+                className="form-input pl-14 pr-6 py-4 text-lg"
               />
-              <button className="absolute right-2 top-2 bottom-2 px-6 bg-gradient-to-r from-green-500 to-emerald-500 text-black font-semibold rounded-xl hover:from-green-400 hover:to-emerald-400 transition-all">
+              <button className="absolute right-2 top-2 bottom-2 px-6 form-button">
                 Search
               </button>
             </div>
@@ -161,10 +88,10 @@ export default function HomePage() {
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-16">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="bg-gray-900/40 backdrop-blur-xl border border-green-500/20 rounded-2xl p-6 animate-pulse">
-                <div className="w-12 h-12 bg-green-500/20 rounded-xl mb-4"></div>
-                <div className="h-8 bg-green-500/20 rounded mb-2"></div>
-                <div className="h-4 bg-green-500/10 rounded"></div>
+              <div key={i} className="explorer-card">
+                <div className="skeleton w-12 h-12 rounded-xl mb-4"></div>
+                <div className="skeleton h-8 rounded mb-2"></div>
+                <div className="skeleton h-4 rounded"></div>
               </div>
             ))}
           </div>
@@ -177,44 +104,40 @@ export default function HomePage() {
               {[
                 { 
                   label: 'Latest Block', 
-                  value: formatNumber(stats?.latestBlock || 0), 
+                  value: formatNumber(stats.latestBlock), 
                   icon: Layers, 
-                  trend: '+1.2%',
-                  color: 'blue'
+                  trend: '+1.2%'
                 },
                 { 
                   label: 'Total Transactions', 
-                  value: `${Math.floor((stats?.totalTransactions || 0) / 1000000)}M+`, 
+                  value: `${Math.floor(stats.totalTransactions / 1000000)}M+`, 
                   icon: Activity, 
-                  trend: '+5.8%',
-                  color: 'green'
+                  trend: '+5.8%'
                 },
                 { 
                   label: 'Active Addresses', 
-                  value: `${Math.floor((stats?.totalAddresses || 0) / 1000)}K+`, 
+                  value: `${Math.floor(stats.totalAddresses / 1000)}K+`, 
                   icon: Users, 
-                  trend: '+2.1%',
-                  color: 'purple'
+                  trend: '+2.1%'
                 },
                 { 
                   label: 'Current TPS', 
-                  value: stats?.currentTPS?.toFixed(1) || '0', 
+                  value: stats.currentTPS.toFixed(1), 
                   icon: Zap, 
-                  trend: '+0.5%',
-                  color: 'yellow'
+                  trend: '+0.5%'
                 }
               ].map((stat, index) => (
-                <div key={index} className="bg-gray-900/40 backdrop-blur-xl border border-green-500/20 rounded-2xl p-6 hover:bg-gray-900/60 hover:border-green-400/40 transition-all duration-300 group">
+                <div key={index} className="stat-card group">
                   <div className="flex items-center justify-between mb-4">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br from-green-400/20 to-emerald-600/20 flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                    <div className="stat-card-icon group-hover:scale-110">
                       <stat.icon className="w-6 h-6 text-green-400" />
                     </div>
-                    <span className="text-green-400 text-sm font-medium bg-green-500/10 px-2 py-1 rounded-full">
+                    <span className="badge-success">
                       {stat.trend}
                     </span>
                   </div>
-                  <h3 className="text-3xl font-bold text-green-100 mb-1">{stat.value}</h3>
-                  <p className="text-green-500/70">{stat.label}</p>
+                  <h3 className="stat-card-value">{stat.value}</h3>
+                  <p className="stat-card-label">{stat.label}</p>
                 </div>
               ))}
             </div>
@@ -222,23 +145,23 @@ export default function HomePage() {
 
           {/* Network Health */}
           <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-16">
-            <div className="bg-gray-900/40 backdrop-blur-xl border border-green-500/20 rounded-2xl p-8">
+            <div className="explorer-card">
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-2xl font-bold text-green-100 flex items-center space-x-2">
                   <Globe className="w-6 h-6 text-green-400" />
                   <span>Network Health</span>
                 </h2>
-                <div className="flex items-center space-x-2 px-4 py-2 bg-green-500/10 border border-green-500/30 rounded-xl">
-                  <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                  <span className="text-green-400 font-medium">All Systems Operational</span>
+                <div className="status-online">
+                  <div className="status-dot-green"></div>
+                  <span className="font-medium">All Systems Operational</span>
                 </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {[
                   { name: 'Indexer', status: 'Syncing blocks', progress: 100, icon: Database },
-                  { name: 'API', status: 'Serving data', progress: 100, icon: Cpu },
-                  { name: 'WebSocket', status: 'Real-time updates', progress: 100, icon: Activity }
+                  { name: 'API', status: 'Serving data', progress: 100, icon: Activity },
+                  { name: 'WebSocket', status: 'Real-time updates', progress: 100, icon: Zap }
                 ].map((service, index) => (
                   <div key={index} className="text-center">
                     <div className="w-16 h-16 bg-green-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -246,9 +169,9 @@ export default function HomePage() {
                     </div>
                     <h3 className="text-lg font-semibold text-green-100 mb-2">{service.name}</h3>
                     <p className="text-green-500/70 text-sm mb-3">{service.status}</p>
-                    <div className="w-full bg-gray-700/50 rounded-full h-2">
+                    <div className="progress-bar">
                       <div 
-                        className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-1000" 
+                        className="progress-bar-fill" 
                         style={{ width: `${service.progress}%` }}
                       ></div>
                     </div>
@@ -259,111 +182,19 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* Recent Activity */}
-          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-16">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              
-              {/* Recent Blocks */}
-              <div className="bg-gray-900/40 backdrop-blur-xl border border-green-500/20 rounded-2xl p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-bold text-green-100 flex items-center space-x-2">
-                    <Layers className="w-5 h-5 text-green-400" />
-                    <span>Latest Blocks</span>
-                  </h3>
-                  <Link 
-                    href="/blocks" 
-                    className="text-green-400 hover:text-green-300 text-sm font-medium flex items-center space-x-1 transition-colors"
-                  >
-                    <span>View all</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </div>
-                
-                <div className="space-y-3">
-                  {recentBlocks.slice(0, 6).map((block) => (
-                    <Link 
-                      key={block.number} 
-                      href={`/block/${block.number}`}
-                      className="block bg-gray-800/30 hover:bg-gray-800/50 rounded-xl p-4 transition-all group"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-green-400/20 rounded-xl flex items-center justify-center">
-                            <span className="text-green-400 font-bold text-sm">{block.number}</span>
-                          </div>
-                          <div>
-                            <p className="text-green-100 font-semibold">Block #{formatNumber(block.number)}</p>
-                            <p className="text-green-500/70 text-sm">{block.transactions} transactions</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-green-400 text-sm font-medium">{formatTime(block.timestamp)}</p>
-                          <p className="text-green-500/70 text-xs">{truncateHash(block.hash)}</p>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-
-              {/* Recent Transactions */}
-              <div className="bg-gray-900/40 backdrop-blur-xl border border-green-500/20 rounded-2xl p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-bold text-green-100 flex items-center space-x-2">
-                    <Activity className="w-5 h-5 text-green-400" />
-                    <span>Latest Transactions</span>
-                  </h3>
-                  <Link 
-                    href="/transactions" 
-                    className="text-green-400 hover:text-green-300 text-sm font-medium flex items-center space-x-1 transition-colors"
-                  >
-                    <span>View all</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </div>
-                
-                <div className="space-y-3">
-                  {recentTransactions.slice(0, 8).map((tx) => (
-                    <Link 
-                      key={tx.hash} 
-                      href={`/tx/${tx.hash}`}
-                      className="block bg-gray-800/30 hover:bg-gray-800/50 rounded-xl p-4 transition-all group"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className={`w-3 h-3 rounded-full ${
-                            tx.status === 'success' ? 'bg-green-400' : 'bg-red-400'
-                          }`}></div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-green-100 font-mono text-sm truncate">{truncateHash(tx.hash)}</p>
-                            <p className="text-green-500/70 text-xs">{truncateHash(tx.from)} → {truncateHash(tx.to)}</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-green-400 text-sm font-medium">{tx.value} ETH</p>
-                          <p className="text-green-500/70 text-xs">{formatTime(tx.timestamp)}</p>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
-
           {/* Quick Links */}
           <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-16">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
-                { name: 'Bridge Assets', href: '/bridge', icon: '🌉', desc: 'Transfer between chains' },
-                { name: 'Swap Tokens', href: '/swap', icon: '🔄', desc: 'Trade tokens instantly' },
-                { name: 'Provide Liquidity', href: '/pools', icon: '💧', desc: 'Earn fees from trading' },
-                { name: 'Analytics', href: '/analytics', icon: '📈', desc: 'View market data' }
+                { name: 'View Blocks', href: '/blocks', icon: '📦', desc: 'Browse latest blocks' },
+                { name: 'Transactions', href: '/transactions', icon: '💸', desc: 'Search transactions' },
+                { name: 'Statistics', href: '/stats', icon: '📊', desc: 'Network analytics' },
+                { name: 'Tokens', href: '/tokens', icon: '🪙', desc: 'Token information' }
               ].map((link, index) => (
                 <Link
                   key={index}
                   href={link.href}
-                  className="bg-gray-900/40 backdrop-blur-xl border border-green-500/20 rounded-2xl p-6 hover:bg-gray-900/60 hover:border-green-400/40 transition-all duration-300 group text-center"
+                  className="explorer-card text-center"
                 >
                   <div className="text-4xl mb-4">{link.icon}</div>
                   <h3 className="text-lg font-bold text-green-100 mb-2">{link.name}</h3>
