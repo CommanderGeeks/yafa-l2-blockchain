@@ -1,4 +1,4 @@
-import PoolPage from '../src/components/PoolPage';
+import PoolPage from '@/components/PoolPage';
 
 export default function Pool() {
   return <PoolPage />;
