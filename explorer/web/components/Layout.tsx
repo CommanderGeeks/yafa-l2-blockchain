@@ -51,26 +51,26 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Header */}
       <header className="relative z-50 bg-gray-900/60 backdrop-blur-xl border-b border-green-500/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
+          <div className="flex justify-between items-center h-20 gap-4">
             
             {/* Logo - Matching YAFA DEX Style */}
-            <Link href="/" className="flex items-center space-x-3 group">
+            <Link href="/" className="flex items-center space-x-3 group flex-shrink-0 mr-2">
               <div className="relative">
                 <div className="absolute inset-0 bg-green-400 blur-lg opacity-50 group-hover:opacity-70 transition-opacity"></div>
                 <div className="relative w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl flex items-center justify-center shadow-2xl transform group-hover:scale-105 transition-transform">
                   <span className="text-black font-bold text-xl">Y</span>
                 </div>
               </div>
-              <div className="hidden sm:block">
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+              <div className="hidden sm:block min-w-0">
+                <h1 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent whitespace-nowrap">
                   YAFA Explorer
                 </h1>
-                <p className="text-green-500/70 text-sm font-medium">L2 Block Explorer</p>
+                <p className="text-green-500/70 text-xs lg:text-sm font-medium whitespace-nowrap">L2 Block Explorer</p>
               </div>
             </Link>
 
             {/* Navigation - Desktop */}
-            <nav className="hidden md:flex items-center space-x-1">
+            <nav className="hidden md:flex items-center space-x-1 flex-shrink-0">
               {navigation.map((item) => {
                 const isActive = pathname === item.href;
                 return (
@@ -91,7 +91,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </nav>
 
             {/* Right Side - Search + Wallet Info */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3 flex-shrink-0">
               {/* Search Bar - Desktop */}
               <form onSubmit={handleSearch} className="hidden lg:block">
                 <div className="relative">
@@ -101,7 +101,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search blocks, txs, addresses..."
-                    className="w-80 bg-gray-900/50 backdrop-blur-sm border border-green-500/30 rounded-xl pl-10 pr-4 py-2.5 text-green-100 placeholder-green-500/50 focus:outline-none focus:ring-2 focus:ring-green-400/50 focus:border-green-400 transition-all"
+                    className="w-72 bg-gray-900/50 backdrop-blur-sm border border-green-500/30 rounded-xl pl-10 pr-4 py-2.5 text-green-100 placeholder-green-500/50 focus:outline-none focus:ring-2 focus:ring-green-400/50 focus:border-green-400 transition-all"
                   />
                 </div>
               </form>
@@ -113,11 +113,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               </div>
 
               {/* Chain Info */}
-              <div className="hidden lg:flex items-center space-x-3 px-4 py-2 bg-gray-900/50 border border-green-500/30 rounded-xl">
-                <Globe className="w-4 h-4 text-green-400" />
-                <div className="text-right">
-                  <p className="text-green-400 text-sm font-semibold">Yafa L2</p>
-                  <p className="text-green-500/70 text-xs">Chain ID: 42069</p>
+              <div className="hidden lg:flex items-center space-x-3 px-4 py-2 bg-gray-900/50 border border-green-500/30 rounded-xl min-w-0">
+                <Globe className="w-4 h-4 text-green-400 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-green-400 text-sm font-semibold whitespace-nowrap">Yafa L2</p>
+                  <p className="text-green-500/70 text-xs whitespace-nowrap">Chain ID: 42069</p>
                 </div>
               </div>
 
