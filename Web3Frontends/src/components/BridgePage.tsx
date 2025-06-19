@@ -1,5 +1,5 @@
+// 3. Updated BridgePage.tsx - Remove duplicate ConnectButton  
 import React from 'react';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import EnhancedNavigation from '@/components/UnifiedNavigation';
 import Bridge from '@/components/Bridge';
 
@@ -14,13 +14,13 @@ const BridgePage = () => {
       <div className="fixed top-20 right-20 w-96 h-96 bg-green-500/10 rounded-full filter blur-3xl animate-pulse-slow pointer-events-none"></div>
       <div className="fixed bottom-20 left-20 w-96 h-96 bg-emerald-500/10 rounded-full filter blur-3xl animate-pulse-slow pointer-events-none"></div>
       
-      {/* Enhanced Navigation */}
+      {/* Enhanced Navigation - Already includes ConnectButton */}
       <EnhancedNavigation />
       
       {/* Main Content */}
       <div className="relative z-10 p-4 md:p-8">
         
-        {/* Header Section */}
+        {/* Header Section - NO ConnectButton since it's in navigation */}
         <div className="flex justify-between items-center mb-12 max-w-7xl mx-auto mt-8">
           <div className="flex items-center space-x-4">
             <div>
@@ -30,8 +30,7 @@ const BridgePage = () => {
               <p className="text-green-500/80 text-lg font-medium mt-2">Transfer assets between Ethereum and Yafa L2</p>
             </div>
           </div>
-          
-          <ConnectButton />
+          {/* NO ConnectButton here */}
         </div>
 
         {/* Bridge Interface */}

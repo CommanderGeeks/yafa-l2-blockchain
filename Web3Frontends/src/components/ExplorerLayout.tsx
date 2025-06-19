@@ -1,6 +1,5 @@
-// ExplorerLayout.tsx - Shared layout for all explorer pages
+// 1. Updated ExplorerLayout.tsx - Remove duplicate ConnectButton
 import React from 'react';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import UnifiedNavigation from '@/components/UnifiedNavigation';
 import { RefreshCw } from 'lucide-react';
 
@@ -33,13 +32,13 @@ const ExplorerLayout: React.FC<ExplorerLayoutProps> = ({
       <div className="fixed top-20 right-20 w-96 h-96 bg-green-500/10 rounded-full filter blur-3xl animate-pulse-slow pointer-events-none"></div>
       <div className="fixed bottom-20 left-20 w-96 h-96 bg-emerald-500/10 rounded-full filter blur-3xl animate-pulse-slow pointer-events-none"></div>
       
-      {/* Navigation */}
+      {/* Navigation - UnifiedNavigation already includes ConnectButton */}
       <UnifiedNavigation />
       
       {/* Main Content */}
       <div className="relative z-10 p-4 md:p-8">
         
-        {/* Header Section */}
+        {/* Header Section - NO ConnectButton here since it's in navigation */}
         <div className="flex justify-between items-center mb-12 max-w-7xl mx-auto mt-8">
           <div className="flex items-center space-x-4">
             <div>
@@ -65,7 +64,7 @@ const ExplorerLayout: React.FC<ExplorerLayoutProps> = ({
               </button>
             )}
             {rightContent}
-            <ConnectButton />
+            {/* NO ConnectButton here - it's in UnifiedNavigation */}
           </div>
         </div>
 

@@ -1,10 +1,8 @@
-// Fixed PoolPage.tsx with proper navigation to positions page
+// 4. Updated PoolPage.tsx (Create Position) - Remove duplicate ConnectButton
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import EnhancedNavigation from '@/components/UnifiedNavigation';
 import CreatePosition from '@/components/CreatePosition';
-import ViewPositions from '@/components/ViewPositions';
 
 const PoolPage = () => {
   const router = useRouter();
@@ -29,15 +27,6 @@ const PoolPage = () => {
     }
   };
 
-  // Handle Connect Wallet in header
-  useEffect(() => {
-    const connectWalletSlot = document.getElementById('connect-wallet-slot');
-    if (connectWalletSlot) {
-      // You can dynamically insert the ConnectButton here if needed
-      // For now, we'll include it in the main content
-    }
-  }, []);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-black to-gray-950 text-green-400 relative overflow-hidden">
       {/* Animated Background Effects */}
@@ -48,13 +37,13 @@ const PoolPage = () => {
       <div className="fixed top-20 right-20 w-96 h-96 bg-green-500/10 rounded-full filter blur-3xl animate-pulse-slow pointer-events-none"></div>
       <div className="fixed bottom-20 left-20 w-96 h-96 bg-emerald-500/10 rounded-full filter blur-3xl animate-pulse-slow pointer-events-none"></div>
       
-      {/* Enhanced Navigation */}
+      {/* Enhanced Navigation - Already includes ConnectButton */}
       <EnhancedNavigation />
       
       {/* Main Content */}
       <div className="relative z-10 p-4 md:p-8">
         
-        {/* Header Section */}
+        {/* Header Section - NO ConnectButton since it's in navigation */}
         <div className="flex justify-between items-center mb-12 max-w-7xl mx-auto mt-8">
           <div className="flex items-center space-x-4">
             <div>
@@ -66,8 +55,7 @@ const PoolPage = () => {
               </p>
             </div>
           </div>
-          
-          <ConnectButton />
+          {/* NO ConnectButton here */}
         </div>
 
         {/* Tab Navigation */}
